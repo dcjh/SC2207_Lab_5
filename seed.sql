@@ -1,7 +1,7 @@
 USE tddag1;
 
 IF OBJECT_ID('tempdb..#people') IS NOT NULL DROP TABLE #people;
-IF OBJECT_ID('tempdb..#vehicle_details') IS NOT NULL DROP TABLE #vehicle;
+IF OBJECT_ID('tempdb..#vehicle_details') IS NOT NULL DROP TABLE #vehicle_details;
 IF OBJECT_ID('tempdb..#vehicle_model') IS NOT NULL DROP TABLE #vehicle_model;
 
 -- temp tables allow for data manipulation before inserting into actual tables
@@ -10,13 +10,12 @@ CREATE TABLE #people (
   nric          CHAR(9)      NOT NULL PRIMARY KEY,
   [name]        VARCHAR(100) NOT NULL,
   email         VARCHAR(255) NOT NULL,
-  contact       VARCHAR(16)  NOT NULL,
+  contact       VARCHAR(16)  NOT NULL
 );
 
 CREATE TABLE #vehicle_details (
   vrn               VARCHAR(8)   NOT NULL PRIMARY KEY,
   obu_id_id         VARCHAR(32)  NOT NULL,
-  model             VARCHAR(255) NOT NULL,
   color             VARCHAR(20)  NOT NULL,
   year_manufactured SMALLINT     NOT NULL,
   sg_registered     BIT          NOT NULL
@@ -29,10 +28,12 @@ CREATE TABLE #vehicle_model (
 );
 
 CREATE TABLE #residence (
-	unit_no         VARCHAR(10)     NOT NULL PRIMARY KEY, -- e.g., '#03-215'
-	postal_code     INT             NOT NULL PRIMARY KEY
+	unit_no         VARCHAR(10)     NOT NULL, -- e.g., '#03-215'
+	postal_code     INT             NOT NULL 
+    PRIMARY KEY(unit_no, postal_code)
 );
 
+-- Insert residence details into temp table
 INSERT INTO #people(nric,[name],email,contact) 
 VALUES
     ('S9123456D', 'tan wei ming',     'weiming.tan@gmail.com',    '98542103'),
@@ -66,7 +67,7 @@ VALUES
     ('S7290123D', 'jason low',        'jason.low@gmail.com',      '97885544'),
     ('S7101234E', 'clara phua',       'clara.phua@gmail.com',     '98446655');
 
-
+-- Insert vehicle details into temp table
 INSERT INTO #vehicle_details(vrn, obu_id_id, color, year_manufactured, sg_registered) 
 VALUES
     ('SJA1234K', 'A1234567890B', 'white',  2018, 1),
@@ -118,7 +119,7 @@ VALUES
     ('SFP0044Y', 'Y7777888899Z', 'white',  2012, 1),
     ('SFQ1156Z', 'Z7777999900A', 'black',  2013, 1);
 
-
+-- Insert vehicle models into temp table
 INSERT INTO #vehicle_model(model, brand, vehicle_type) 
 VALUES  
     ('Corolla Altis','Toyota','car'),
@@ -134,7 +135,266 @@ VALUES
     ('Golf','Volkswagen','car'),
     ('Impreza','Subaru','car');
 
+--sanity checks
+IF OBJECT_ID('tempdb..#people')          IS NULL RAISERROR('#people missing',16,1);
+IF OBJECT_ID('tempdb..#vehicle_details') IS NULL RAISERROR('#vehicle_details missing',16,1);
+IF OBJECT_ID('tempdb..#vehicle_model')   IS NULL RAISERROR('#vehicle_model missing',16,1);
+IF OBJECT_ID('tempdb..#residence')       IS NULL RAISERROR('#residence missing',16,1);
+
+IF NOT EXISTS (SELECT 1 FROM #people)           RAISERROR('#people empty',16,1);
+IF NOT EXISTS (SELECT 1 FROM #vehicle_details)  RAISERROR('#vehicle_details empty',16,1);
+IF NOT EXISTS (SELECT 1 FROM #vehicle_model)    RAISERROR('#vehicle_model empty',16,1);
+IF NOT EXISTS (SELECT 1 FROM #residence)        RAISERROR('#residence empty',16,1);
+
+IF OBJECT_ID('tempdb..#people_order')    IS NOT NULL DROP TABLE #people_order;
+IF OBJECT_ID('tempdb..#residence_order') IS NOT NULL DROP TABLE #residence_order;
+IF OBJECT_ID('tempdb..#person_alloc')    IS NOT NULL DROP TABLE #person_alloc;
+IF OBJECT_ID('tempdb..#owner_order')     IS NOT NULL DROP TABLE #owner_order;
+IF OBJECT_ID('tempdb..#veh_order')       IS NOT NULL DROP TABLE #veh_order;
+IF OBJECT_ID('tempdb..#model_order')     IS NOT NULL DROP TABLE #model_order;
+IF OBJECT_ID('tempdb..#veh_first_pass')  IS NOT NULL DROP TABLE #veh_first_pass;
+IF OBJECT_ID('tempdb..#veh_second_pass') IS NOT NULL DROP TABLE #veh_second_pass;
+IF OBJECT_ID('tempdb..#veh_all')         IS NOT NULL DROP TABLE #veh_all;
+
+-- Temporary tables for processing
+CREATE TABLE #people_order (
+    nric CHAR(9) PRIMARY KEY, 
+    rn   INT NOT NULL
+);
+CREATE TABLE #residence_order (
+    unit_no     VARCHAR(10), 
+    postal_code INT,
+    rn          INT NOT NULL, 
+    PRIMARY KEY(unit_no, postal_code)
+);
+CREATE TABLE #person_alloc (
+    nric        CHAR(9) PRIMARY KEY,
+    unit_no     VARCHAR(10) NOT NULL,
+    postal_code INT         NOT NULL
+);
+CREATE TABLE #owner_order (
+    nric  CHAR(9) PRIMARY KEY, 
+    rn    INT NOT NULL
+);
+CREATE TABLE #veh_order (
+    vrn                VARCHAR(8) PRIMARY KEY,
+    obu_id_id          VARCHAR(32) NOT NULL,
+    color              VARCHAR(20) NOT NULL,
+    year_manufactured  SMALLINT    NOT NULL,
+    sg_registered      BIT         NOT NULL,
+    rn                 INT         NOT NULL
+);
+CREATE TABLE #model_order (
+    model         VARCHAR(255) NOT NULL,
+    brand         VARCHAR(255) NOT NULL,
+    vehicle_type  VARCHAR(255) NOT NULL,
+    rn            INT          NOT NULL,
+    PRIMARY KEY(model, brand, vehicle_type)
+);
+CREATE TABLE #veh_first_pass (
+    vrn                 VARCHAR(8) PRIMARY KEY,
+    obu_id_id           VARCHAR(32)   NOT NULL,
+    color               VARCHAR(20)   NOT NULL,
+    year_manufactured   SMALLINT      NOT NULL,
+    sg_registered       BIT           NOT NULL,
+    model               VARCHAR(255)  NOT NULL,
+    nric                CHAR(9)       NOT NULL
+);
+CREATE TABLE #veh_second_pass (
+    vrn                 VARCHAR(8) PRIMARY KEY,
+    obu_id_id           VARCHAR(32)   NOT NULL,
+    color               VARCHAR(20)   NOT NULL,
+    year_manufactured   SMALLINT      NOT NULL,
+    sg_registered       BIT           NOT NULL,
+    model               VARCHAR(255)  NOT NULL,
+    nric                CHAR(9)       NOT NULL
+);
+CREATE TABLE #veh_all (
+    vrn                 VARCHAR(8) PRIMARY KEY,
+    obu_id_id           VARCHAR(32)   NOT NULL,
+    color               VARCHAR(20)   NOT NULL,
+    year_manufactured   SMALLINT      NOT NULL,
+    sg_registered       BIT           NOT NULL,
+    model               VARCHAR(255)  NOT NULL,
+    nric                CHAR(9)       NOT NULL
+);
+
+-- number people and store order
+INSERT INTO #people_order(nric, rn)
+    SELECT 
+        p.nric, 
+        ROW_NUMBER() OVER (ORDER BY p.nric)
+    FROM #people p;
+
+-- number residences and store order
+INSERT INTO #residence_order(unit_no, postal_code, rn)
+    SELECT 
+        r.unit_no, 
+        r.postal_code, 
+        ROW_NUMBER() OVER (ORDER BY r.postal_code, r.unit_no)
+    FROM #residence r;
+
+-- ensure there is at least one residence to allocate
+DECLARE @res_count INT = (SELECT COUNT(*) FROM #residence_order);
+IF @res_count = 0 RAISERROR('No residences available for allocation.',16,1);
+
+-- allocate residences to people in round-robin fashion
+INSERT INTO #person_alloc(nric, unit_no, postal_code)
+    SELECT 
+        po.nric,
+        ro.unit_no,
+        ro.postal_code
+    FROM #people_order po
+    JOIN #residence_order ro
+    ON ro.rn = ((po.rn - 1) % @res_count) + 1;
+
+-- Insert people into main PERSON table
+INSERT INTO person(nric, [name], email, contact, unit_no, postal_code)
+    SELECT 
+        p.nric, 
+        p.[name], 
+        p.email, 
+        p.contact, 
+        a.unit_no, 
+        a.postal_code
+    FROM #people p
+    JOIN #person_alloc a ON a.nric = p.nric
+    WHERE NOT EXISTS (SELECT 1 FROM PERSON x WHERE x.nric = p.nric);
+
+-- Insert vehicles into main VEHICLE table
+INSERT INTO vehicle_model(model, brand, vehicle_type)
+    SELECT 
+        m.model, 
+        m.brand, 
+        m.vehicle_type
+    FROM #vehicle_model m
+    WHERE NOT EXISTS (
+        SELECT 
+            1
+        FROM vehicle_model d
+        WHERE d.model = m.model
+            AND d.brand = m.brand
+            AND d.vehicle_type = m.vehicle_type
+    );
+
+-- number owners and store order
+INSERT INTO #owner_order(nric, rn)
+    SELECT 
+        p.nric, 
+        ROW_NUMBER() OVER (ORDER BY p.nric)
+    FROM PERSON p;  -- use main table (ensures we only assign to inserted people)
+
+-- number vehicles and store order
+INSERT INTO #veh_order(vrn, obu_id_id, color, year_manufactured, sg_registered, rn)
+    SELECT 
+        v.vrn, 
+        v.obu_id_id, 
+        v.color, 
+        v.year_manufactured, 
+        v.sg_registered,
+        ROW_NUMBER() OVER (ORDER BY v.vrn)
+    FROM #vehicle_details v;
+
+-- number models and store order
+INSERT INTO #model_order(model, brand, vehicle_type, rn)
+    SELECT 
+        vm.model, 
+        vm.brand, 
+        vm.vehicle_type,
+        ROW_NUMBER() OVER (ORDER BY vm.model, vm.brand, vm.vehicle_type)
+    FROM vehicle_model vm;
+
+-- ensure there is at least one owner to assign vehicles
+DECLARE @owner_cnt INT = (SELECT COUNT(*) FROM #owner_order);
+IF @owner_cnt = 0 RAISERROR('No owners in PERSON to assign vehicles.',16,1);
+-- ensure there is at least one model to assign to vehicles
+DECLARE @model_cnt INT = (SELECT COUNT(*) FROM #model_order);
+IF @model_cnt = 0 RAISERROR('No models in VEHICLE_MODEL to assign to vehicles.',16,1);
+
+--  First pass: assign vehicles to owners until all owners have at least one vehicle
+INSERT INTO #veh_first_pass(vrn, obu_id_id, color, year_manufactured, sg_registered, model, nric)
+    SELECT 
+        v.vrn, 
+        v.obu_id_id, 
+        v.color, 
+        v.year_manufactured, 
+        v.sg_registered,
+        mo.model,
+        oo.nric
+    FROM #veh_order v
+    JOIN #owner_order oo
+    ON oo.rn = v.rn
+    JOIN #model_order mo
+    ON mo.rn = ((v.rn - 1) % @model_cnt) + 1
+    WHERE v.rn <= @owner_cnt;
+
+--  Second pass: assign remaining vehicles in round-robin fashion
+INSERT INTO #veh_second_pass(vrn, obu_id_id, color, year_manufactured, sg_registered, model, nric)
+    SELECT 
+        v.vrn, 
+        v.obu_id_id, 
+        v.color, 
+        v.year_manufactured, 
+        v.sg_registered,
+        mo.model, 
+        oo.nric
+    FROM #veh_order v
+    JOIN #owner_order oo
+    ON oo.rn = ((v.rn - 1) % @owner_cnt) + 1
+    JOIN #model_order mo
+    ON mo.rn = ((v.rn - 1) % @model_cnt) + 1
+    WHERE v.rn > @owner_cnt;
+
+INSERT INTO #veh_all(vrn, obu_id_id, color, year_manufactured, sg_registered, model, nric)
+    SELECT 
+        vrn, 
+        obu_id_id, 
+        color, 
+        year_manufactured, 
+        sg_registered, 
+        model, 
+        nric
+    FROM #veh_first_pass
+    UNION ALL
+    SELECT 
+        vrn, 
+        obu_id_id, 
+        color, 
+        year_manufactured, 
+        sg_registered, 
+        model, 
+        nric
+    FROM #veh_second_pass;
+
+-- Insert into main VEHICLE table (idempotent by VRN)
+INSERT INTO vehicle(vrn, obu_id_id, color, year_manufactured, sg_registered, model, nric)
+    SELECT 
+        a.vrn, 
+        a.obu_id_id, 
+        a.color, 
+        a.year_manufactured, 
+        a.sg_registered,
+        a.model, 
+        a.nric
+    FROM #veh_all a
+    WHERE NOT EXISTS (
+        SELECT 
+            1 
+        FROM VEHICLE d
+        WHERE d.vrn = a.vrn
+    );
+
 -- Clean up temporary tables
 DROP TABLE #people;
 DROP TABLE #vehicle_details;
 DROP TABLE #vehicle_model;
+DROP TABLE #residence;
+DROP TABLE #people_order;
+DROP TABLE #residence_order;
+DROP TABLE #person_alloc;
+DROP TABLE #owner_order;
+DROP TABLE #veh_order;
+DROP TABLE #model_order;
+DROP TABLE #veh_first_pass;
+DROP TABLE #veh_second_pass;
+DROP TABLE #veh_all;
