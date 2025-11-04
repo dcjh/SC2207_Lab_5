@@ -117,19 +117,29 @@ CREATE TABLE Vehicle(
 
 CREATE TABLE ParkingSession(
 	session_id      INT IDENTITY(1, 1)  NOT NULL,
+    vrn             VARCHAR(10)         NOT NULL,
+    carpark_id      VARCHAR(100)		NOT NULL,
 	entry_datetime  DATETIME            NOT NULL,
-	exit_datetime   DATETIME,
-	parking_mode    VARCHAR(255)        NOT NULL,
-	amount_paid     MONEY,
 	rate_id         INT,
-	carpark_id      VARCHAR(100)		NOT NULL,
-	vrn             VARCHAR(10)         NOT NULL,
+	amount_paid     MONEY,
 
 	PRIMARY KEY (session_id),
 	FOREIGN KEY (rate_id)       REFERENCES ShortTermRates(rate_id),
     FOREIGN KEY (carpark_id)    REFERENCES Carpark(carpark_id),
 	FOREIGN KEY (vrn)           REFERENCES Vehicle(vrn),
 );
+
+CREATE TABLE EntryExitMode(
+    vrn             VARCHAR(10)   NOT NULL,
+    carpark_id      VARCHAR(100)  NOT NULL,
+	entry_datetime  DATETIME      NOT NULL,
+	exit_datetime   DATETIME      NOT NULL,
+	parking_mode    VARCHAR(255)  NOT NULL,
+
+    PRIMARY KEY (vrn, carpark_id, entry_datetime),
+    FOREIGN KEY (vrn) REFERENCES vehicle(vrn),
+    FOREIGN KEY (carpark_no) REFERENCES carpark(carpark_no)
+)
 
 CREATE TABLE Offence(
 	offense_id          INT IDENTITY(1, 1)  NOT NULL,
