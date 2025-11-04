@@ -497,6 +497,74 @@ VALUES
 	(17.00, 0, 'sheltered', 'motorcycle'),
 	(185.00, 0, 'sheltered', 'commercial');
 
+CREATE TABLE #season_pass_dates (
+	start_date DATE,
+	end_date DATE,
+	purchase_datetime DATETIME
+	);
+
+INSERT INTO #season_pass_dates (start_date, end_date, purchase_datetime)
+VALUES
+	('2025-11-01', '2025-11-30', '2025-10-27 09:00:00'),
+	('2025-11-01', '2025-11-30', '2025-10-27 13:00:00'),
+	('2025-11-01', '2025-11-30', '2025-10-28 10:10:00'),
+	('2025-11-01', '2025-11-30', '2025-10-28 15:00:00'),
+	('2025-11-01', '2025-11-30', '2025-10-29 14:05:00'),
+	('2025-11-01', '2025-11-30', '2025-10-29 14:10:00'),
+	('2025-11-01', '2025-11-30', '2025-10-30 14:05:00'),
+	('2025-11-01', '2025-11-30', '2025-10-30 11:40:00'),
+	('2025-11-01', '2025-11-30', '2025-10-30 12:15:00'),
+	('2025-11-01', '2025-11-30', '2025-10-30 16:15:00'),
+	('2025-12-01', '2025-12-31', '2025-11-28 10:00:00'),
+	('2025-12-01', '2025-12-31', '2025-11-28 12:00:00'),
+	('2025-12-01', '2025-12-31', '2025-11-29 11:20:00'),
+	('2025-12-01', '2025-12-31', '2025-11-30 15:05:00'),
+	('2025-12-01', '2025-12-31', '2025-11-30 10:20:00'),
+	('2025-01-01', '2026-01-31', '2025-12-28 16:00:00'),
+	('2025-01-01', '2026-01-31', '2025-12-29 11:10:00'),
+	('2025-01-01', '2026-01-31', '2025-12-30 13:00:00'),
+	('2025-01-01', '2026-01-31', '2025-12-30 14:05:00'),
+	('2025-01-01', '2026-01-31', '2025-12-31 15:35:00'),
+	('2025-02-01', '2026-02-28', '2026-01-28 16:30:00'),
+	('2025-02-01', '2026-02-28', '2026-01-29 12:30:00'),
+	('2025-02-01', '2026-02-28', '2026-01-29 11:00:00'),
+	('2025-02-01', '2026-02-28', '2026-01-30 10:15:00'),
+	('2025-02-01', '2026-02-28', '2026-01-31 13:35:00'),
+	('2025-03-01', '2026-03-31', '2026-02-27 13:30:00'),
+	('2025-03-01', '2026-03-31', '2026-02-27 11:05:00'),
+	('2025-03-01', '2026-03-31', '2026-02-28 14:45:00'),
+	('2025-03-01', '2026-03-31', '2026-02-28 10:25:00'),
+	('2025-03-01', '2026-03-31', '2026-02-28 13:05:00');
+
+INSERT INTO SeasonalPass (status, start_date, end_date, amount_paid, pass_type, purchase_datetime, season_rate_id, carpark_id, vrn)
+	SELECT TOP (30)
+		'Active' AS status,
+		s.start_date,
+		s.end_date,
+		sr.monthly_charges AS amount_paid,
+		CASE WHEN RAND(CHECKSUM(NEWID())) < 0.6 THEN 'Resident' ELSE 'Non-Resident' END AS pass_type,
+		s.purchase_datetime,
+		sr.season_rate_id,
+		c.carpark_id,
+		v.vrn
+	FROM #season_pass_dates
+	CROSS APPLY (
+		SELECT TOP 1 v.vrn, v.vehicle_type
+		FROM Vehicle v
+		ORDER BY NEWID()
+	) v
+	CROSS APPLY (
+		SELECT TOP 1 c.carpark_id, c.season_total_quota
+		FROM Carpark c
+		ORDER BY NEWID()
+	) c
+	JOIN SeasonRate sr
+		ON sr.vehicle_type = v.vehicle_type
+		AND sr.carpark_type = CASE WHEN c.carpark_id LIKE 'TWM%' THEN 'sheltered' ELSE 'surface' END
+	ORDER BY s.purchase_datetime;
+
+DROP TABLE #season_pass_dates
+
 -- Insert data into lot_type
 INSERT INTO LotType (color)
 VALUES 
