@@ -433,7 +433,7 @@ INSERT INTO vehicle(vrn, obu_id_id, color, year_manufactured, sg_registered, mod
     );
 
 -- Insert data into season_rate
-INSERT INTO season_rate (monthly_charges, tier, carpark_type, vehicle_type)
+INSERT INTO SeasonRate (monthly_charges, tier, carpark_type, vehicle_type)
 VALUES
 	(80.00, 1, 'surface', 'car'),
 	(165.00, 2, 'surface', 'car'),
@@ -445,7 +445,7 @@ VALUES
 	(185.00, 0, 'sheltered', 'commercial');
 
 -- Insert data into lot_type
-INSERT INTO lot_type (color)
+INSERT INTO LotType (color)
 VALUES 
 	('Red'),
 	('Red_white'),
