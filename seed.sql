@@ -443,7 +443,14 @@ VALUES
 	(190.00, 2, 'sheltered', 'car'),
 	(17.00, 0, 'sheltered', 'motorcycle'),
 	(185.00, 0, 'sheltered', 'commercial');
-	
+
+-- Insert data into lot_type
+INSERT INTO lot_type (color)
+VALUES 
+	('Red'),
+	('Red_white'),
+	('White'),
+	('Yellow');
 
 -- Clean up temporary tables
 DROP TABLE #people;
