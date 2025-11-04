@@ -86,17 +86,20 @@ WHERE sp.person_id = p.person_id
     AND r.hdb_postal_code = h.postal_code
     AND h.carpark_id = sp.carpark_id
     AND (
-        (SELECT 
-            COUNT(*) 
-        FROM seasonal_pass sp2 
-        WHERE sp2.carpark_id = sp.carpark_id 
-            AND MONTH(sp2.start_date) = MONTH(sp.start_date)
-        ) 
-        < 0.9 * (SELECT 
-                    season_total_quota 
-                 FROM carpark c 
-                 WHERE c.carpark_id = sp.carpark_id
-                )
+        (
+            (SELECT 
+                COUNT(*) 
+            FROM seasonal_pass sp2 
+            WHERE sp2.carpark_id = sp.carpark_id 
+                AND MONTH(sp2.start_date) = MONTH(sp.start_date)
+            ) 
+            < 
+            0.9 * (SELECT 
+                        season_total_quota 
+                   FROM carpark c 
+                   WHERE c.carpark_id = sp.carpark_id
+            )
+        )
         OR
         p.person_id IN (
             SELECT 
