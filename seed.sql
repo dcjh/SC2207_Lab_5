@@ -432,6 +432,19 @@ INSERT INTO vehicle(vrn, obu_id_id, color, year_manufactured, sg_registered, mod
         WHERE d.vrn = a.vrn
     );
 
+-- Insert data into season_rate
+INSERT INTO season_rate (monthly_charges, tier, carpark_type, vehicle_type)
+VALUES
+	(80.00, 1, 'surface', 'car'),
+	(165.00, 2, 'surface', 'car'),
+	(15.00, 0, 'surface', 'motorcycle'),
+	(185.00, 0, 'surface', 'commercial'),
+	(110.00, 1, 'sheltered', 'car'),
+	(190.00, 2, 'sheltered', 'car'),
+	(17.00, 0, 'sheltered', 'motorcycle'),
+	(185.00, 0, 'sheltered', 'commercial');
+	
+
 -- Clean up temporary tables
 DROP TABLE #people;
 DROP TABLE #vehicle_details;
