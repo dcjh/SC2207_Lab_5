@@ -452,6 +452,44 @@ VALUES
 	('White'),
 	('Yellow');
 
+INSERT INTO ParkingRule (rule_desc)
+VALUES
+('Parking in a place other than in a parking lot.'),
+('Using a parking place for unauthorised purpose.'),
+('Failure to pay parking charge prior to leaving a parking place.'),
+('Parking in a parking place not designated for use by that class of vehicle.'),
+('Drawing, driving, pushing, or parking a vehicle in a disorderly manner.'),
+('Pushing or removing a motor vehicle without owner or driver permission.'),
+('Parking against traffic flow.'),
+('Failure to obey signs exhibited in the parking place.'),
+('Parking beyond the boundaries of the parking lot causing obstruction.'),
+('Entering a parking place other than through the proper access.'),
+('Leaving a parking place other than through the proper exit.'),
+('Repairing or allowing repairs to a motor vehicle in a parking place.'),
+('Using a motor vehicle in a parking place to sell or promote goods.'),
+('Causing or allowing a vehicle to be washed in a parking place.'),
+('Failure to obey lawful directions given by parking wardens.'),
+('Parking in a season parking place without valid season parking.'),
+('Unauthorised parking in reserved lot or without displaying authorised label.'),
+('Displaying altered or tampered authorisation label.'),
+('Failure to produce authorisation on demand for inspection.'),
+('No parking coupon or session.'),
+('Selecting wrong car park of a lower charge.'),
+('Selecting wrong vehicle class of a lower charge.'),
+('Parking after expiry of session (half hour or less).'),
+('Parking after expiry of session (half to one hour).'),
+('Parking after expiry of session (exceeds one hour).'),
+('Parking without displaying valid parking coupons or displaying insufficient amount.'),
+('Parking and displaying invalid parking coupons.'),
+('Parking coupon not clearly displayed.'),
+('Displaying coupon with time later than actual parking time.'),
+('Displaying altered or tampered parking coupon.'),
+('Parking after expiry of coupon validity (half hour or less).'),
+('Parking after expiry of coupon validity (half to one hour).'),
+('Parking after expiry of coupon validity (exceeds one hour).'),
+('Failing to produce coupon on demand for inspection.'),
+('Illegal parking in common property.');
+
 -- Clean up temporary tables
 DROP TABLE #people;
 DROP TABLE #vehicle_details;
