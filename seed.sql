@@ -3,6 +3,7 @@ USE tddag1;
 IF OBJECT_ID('tempdb..#people') IS NOT NULL DROP TABLE #people;
 IF OBJECT_ID('tempdb..#vehicle_details') IS NOT NULL DROP TABLE #vehicle_details;
 IF OBJECT_ID('tempdb..#vehicle_model') IS NOT NULL DROP TABLE #vehicle_model;
+IF OBJECT_ID('tempdb..#residence') IS NOT NULL DROP TABLE #residence;
 
 -- temp tables allow for data manipulation before inserting into actual tables
 CREATE TABLE #people (
@@ -135,7 +136,19 @@ VALUES
     ('Sylphy','Nissan','car'),
     ('Lancer','Mitsubishi','car'),
     ('Golf','Volkswagen','car'),
-    ('Impreza','Subaru','car');
+    ('Impreza','Subaru','car'),
+    ('CB400','Honda','motorcycle'),
+    ('Wave 125','Honda','motorcycle'),
+    ('NMAX 155','Yamaha','motorcycle'),
+    ('MT-07','Yamaha','motorcycle'),
+    ('Versys 650','Kawasaki','motorcycle'),
+    ('Burgman 400','Suzuki','motorcycle'),
+    ('Hiace','Toyota','commercial'),
+    ('NV350','Nissan','commercial'),
+    ('K2500','Kia','commercial'),
+    ('H100','Hyundai','commercial'),
+    ('Canter','Mitsubishi','commercial'),
+    ('Sprinter','Mercedes-Benz','commercial');
 
 -- Insert hdb block details into temp table
 INSERT INTO #hdb_block(postal_code, block_no, street_name, carpark_id) 
@@ -403,7 +416,7 @@ INSERT INTO #veh_first_pass(vrn, obu_id_id, color, year_manufactured, sg_registe
     SELECT 
         v.vrn, 
         v.obu_id_id, 
-        v.color, 
+        v.color,
         v.year_manufactured, 
         v.sg_registered,
         mo.model,
@@ -491,6 +504,32 @@ VALUES
 	('Red_white'),
 	('White'),
 	('Yellow');
+
+-- Cars
+INSERT INTO ShortTermRates 
+(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
+VALUES
+('Car', 1.20, '07:00', '17:00', 'Weekday', 20.00, 'Per Day'),
+('Car', 0.60, '17:00', '22:30', 'Weekday', 10.00, 'Per Day'),
+('Car', 0.80, '07:00', '22:30', 'Weekend/Public Holiday', 12.00, 'Per Day'),
+('Car', 0.70, '22:30', '07:00', 'All', 5.00, 'Per Entry');
+
+-- Motorcycles
+INSERT INTO ShortTermRates 
+(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
+VALUES
+('Motorcycle', 0.65, '07:00', '22:30', 'All', 0.65, 'Per Lot'),
+('Motorcycle', 0.30, '22:30', '07:00', 'All', 0.65, 'Per Lot');
+
+-- Commercial Vehicles (Lorries, Vans, Trucks)
+INSERT INTO ShortTermRates 
+(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
+VALUES
+('Commercial', 1.20, '07:00', '22:30', 'Weekday', 40.00, 'Per Day'),
+('Commercial', 1.00, '07:00', '22:30', 'Weekend/Public Holiday', 30.00, 'Per Day'),
+('Commercial', 0.80, '22:30', '07:00', 'All', 25.00, 'Per Entry');
+
+
 
 INSERT INTO ParkingRule (rule_desc)
 VALUES
