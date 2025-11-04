@@ -12,7 +12,7 @@ CREATE TABLE carpark(
 
 CREATE TABLE mscp (
     carpark_id        INT   NOT NULL,
-    clearance_height  FLOAT NOT NULL,
+    clearance_height  DECIMAL(3,2) NOT NULL,
     deck_count        INT   NOT NULL,
 
 	PRIMARY KEY (carpark_id),
