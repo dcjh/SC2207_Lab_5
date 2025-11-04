@@ -528,6 +528,44 @@ VALUES
 (34, 'All', 400.00),
 (35, 'All', 100.00);
 
+
+--Carpark data insertion
+INSERT INTO Carpark (carpark_id, night_parking, grace_minutes, season_total_quota, season_current_count)
+VALUES
+  ('AH1',  1, 15,  50, 10),
+  ('AK52', 1,  0,  50, 10),
+  ('AM14', 1,  0, 180, 36),
+  ('AM16', 1, 15,  60, 12),
+  ('AM19', 1, 15, 180, 36),
+  ('TWM1', 1, 15, 360, 72),
+  ('TWM2', 1, 15, 360, 72),
+  ('TWM3', 1, 15, 360, 72),
+  ('TWM4', 1, 15, 300, 60),
+  ('TWM5', 1,  0,  30,  6),
+  ('BE31', 0, 15,  50, 10),
+  ('BE33', 0, 15,  50, 10),
+  ('BE35', 0, 15,  50, 10),
+  ('BE39', 0, 15, 300, 60),
+  ('BE45', 0,  0, 180, 36),
+  ('W21',  0, 15,  50, 10),
+  ('W26',  0,  0,  50, 10),
+  ('W27',  0,  0,  50, 10),
+  ('W28',  0,  0,  30,  6),
+  ('W29',  0,  0,  50, 10);
+INSERT INTO MSCP (carpark_id, clearance_height, deck_count)
+VALUES
+  ('AM14', 2.15,  6),
+  ('AM16', 2.15,  2),
+  ('AM19', 2.15,  6),
+  ('TWM1', 2.00, 12),
+  ('TWM2', 2.15, 12),
+  ('TWM3', 2.15, 12),
+  ('TWM4', 2.15, 10),
+  ('TWM5', 2.15,  1),
+  ('BE39', 1.90, 10),
+  ('BE45', 2.15,  6),
+  ('W28',  4.50,  1);
+
 -- Clean up temporary tables
 DROP TABLE #people;
 DROP TABLE #vehicle_details;
