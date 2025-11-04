@@ -80,26 +80,73 @@ BEGIN
 END
 GO
 
+-- Trigger 1: Validates the purchase against the 90% quota rule.
+-- This should be set to execute FIRST.
+CREATE TRIGGER trg_EnforceSeasonPassQuota
+ON SeasonalPass
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Check for any violations in the inserted batch.
+    IF EXISTS (
+        SELECT 1
+        FROM
+            inserted i
+        JOIN
+            Carpark c ON i.carpark_id = c.carpark_id
+        WHERE
+            -- Condition 1: Block ANY purchase if the carpark is at or over maximum capacity.
+            (c.season_current_count >= c.season_total_quota)
+            OR
+            -- Condition 2: Block non-resident purchases if the carpark is at or over 90% capacity.
+            (
+                c.season_current_count >= (c.season_total_quota * 0.9)
+                AND
+                NOT EXISTS (
+                    SELECT 1
+                    FROM Vehicle v
+                    JOIN Person p ON v.nric = p.nric
+                    JOIN HdbBlock hb ON p.postal_code = hb.postal_code AND hb.carpark_id = c.carpark_id
+                    WHERE v.vrn = i.vrn
+                )
+            )
+    )
+    BEGIN
+        -- If any row in the batch violates either rule, roll back the entire transaction.
+        RAISERROR ('Purchase failed. The carpark has either reached its maximum capacity or its 90%% quota, which is reserved for residents.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END;
+END;
+GO
+
+
+-- Trigger 2: Increments the season pass count in the Carpark table.
+-- This should be set to execute LAST.
 CREATE TRIGGER trg_increment_season_count_on_insert
 ON SeasonalPass
 AFTER INSERT
 AS
 BEGIN
     SET NOCOUNT ON;
-    UPDATE Carpark
-    SET season_current_count = season_current_count + 1
-    WHERE carpark_id IN (SELECT carpark_id FROM inserted);
-END
-GO
 
-CREATE TRIGGER trg_decrement_season_count_on_delete
-ON SeasonalPass
-AFTER DELETE
-AS
-BEGIN
-    SET NOCOUNT ON;
-    UPDATE Carpark
-    SET season_current_count = season_current_count - 1
-    WHERE carpark_id IN (SELECT carpark_id FROM deleted);
-END
+    -- This query correctly handles multi-row inserts by grouping the inserted rows
+    -- by carparkid and updating the count for each affected carpark.
+    UPDATE C
+    SET
+        season_current_count = C.season_current_count + I.NewPasses
+    FROM
+        Carpark AS C
+    JOIN
+        (
+            SELECT
+                carpark_id,
+                COUNT(*) AS NewPasses
+            FROM
+                inserted
+            GROUP BY
+                carpark_id
+        ) AS I ON C.carpark_id = I.carpark_id;
+END;
 GO

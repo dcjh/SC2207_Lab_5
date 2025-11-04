@@ -1,133 +1,200 @@
-USE tddag1;
+-- Q1. Weekday Parking for Less Than an Hour in MSCPs
+SELECT
+    m.carpark_id,
+    vm.vehicle_type,
+    COUNT(*) AS NumberOfVehicles
+FROM
+    EntryExitMode AS eem
+JOIN
+    MSCP AS m ON eem.carpark_id = m.carpark_id
+JOIN
+    Vehicle AS v ON eem.vrn = v.vrn
+JOIN
+    VehicleModel AS vm ON v.model = vm.model
+WHERE
+    DATEDIFF(minute, eem.entry_datetime, eem.exit_datetime) < 60
+    AND DATENAME(weekday, eem.entry_datetime) IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+GROUP BY
+    m.carpark_id,
+    vm.vehicle_type
+ORDER BY
+    m.carpark_id,
+    vm.vehicle_type;
 
-/*
- 1. For each MSCP, count how many vehicles park for less than an hour during weekdays (Mon – Fri). 
-Breakdown the records by vehicle types (i.e. car, motorcycle, and commercial vehicle).
-*/
 
-SELECT 
-    m.mscp_id,
-    v.vehicle_type,
-    COUNT(ps.session_id) AS vehicle_count
-FROM mscp m, parking_session ps, vehicle v
-WHERE m.carpark_id = ps.carpark_id
-    AND ps.vehicle_id = v.vehicle_id
-    AND DATEDIFF(MINUTE, ps.start_time, ps.end_time) < 60
-    AND DATENAME(WEEKDAY, ps.start_time) IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
-GROUP BY m.mscp_id, v.vehicle_type
+-- Q2. Total Revenue by Carpark
+SELECT
+    carpark_id,
+    SUM(ShortTermRevenue) AS TotalShortTermRevenue,
+    SUM(SeasonParkingRevenue) AS TotalSeasonParkingRevenue
+FROM
+(
+    -- Calculate revenue from short-term parking sessions
+    SELECT
+        carpark_id,
+        amount_paid AS ShortTermRevenue,
+        0 AS SeasonParkingRevenue
+    FROM
+        ParkingSession
+    WHERE
+        rate_id IS NOT NULL -- Short-term sessions have a rateid
 
-/* 
-2. For each carpark, list down the total revenue 
-collected for both short term parking as season parking separately.
-*/
+    UNION ALL
 
-SELECT 
-    c.carpark_id,
-    SUM(CASE WHEN ps.parking_type = 'Short Term' THEN ps.amount_paid ELSE 0 END) AS short_term_revenue,
-    SUM(CASE WHEN sp.pass_type = 'Season' THEN sp.total_amount ELSE 0 END) AS season_parking_revenue
-FROM carpark c, parking_session ps, seasonal_pass sp 
-WHERE c.carpark_id = ps.carpark_id
-  AND c.carpark_id = sp.carpark_id
-GROUP BY c.carpark_id
+    -- Calculate revenue from season pass sales
+    SELECT
+        carpark_id,
+        0 AS ShortTermRevenue,
+        amount_paid AS SeasonParkingRevenue
+    FROM
+        SeasonalPass
+) AS RevenueData
+GROUP BY
+    carpark_id
+ORDER BY
+    carpark_id;
 
-/* 
-3. List down the season parking holder who are not resident at the HDB block that linked to the carpark. 
-For each pass holder, count how many months they have subscribe to the season parking, break down by different carpark.
-*/
-
-SELECT 
-    p.person_name,
+-- Q3. Non-Resident Season Parking Holders
+SELECT
+    p.name AS PassHolderName,
+    v.vrn AS VehicleRegistration,
     sp.carpark_id,
-    COUNT(sp.pass_id) AS months_subscribed
-FROM person p, seasonal_pass sp, residence r, hdb_block h, carpark c
-WHERE p.person_id = sp.person_id
-    AND p.person_id = r.person_id
-    AND r.hdb_postal_code = h.postal_code
-    AND h.carpark_id = c.carpark_id
-    AND sp.carpark_id <> h.carpark_id
-GROUP BY p.person_name, sp.carpark_id
-
-
-/* 
-4. List down the name of vehicle owner and their vehicle registration 
-number who committed parking offences at the carpark where they are 
-not the residents. Count the number of offences and total amount of fines.
-*/
-
-SELECT 
-    p.person_name,
-    v.registration_number,
-    COUNT(o.offence_id) AS offence_count,
-    SUM(o.fine_amount) AS total_fines
-FROM person p, vehicle v, offence o, residence r, hdb_block h, carpark c
-WHERE p.person_id = v.owner_id
-    AND v.vehicle_id = o.vehicle_id
-    AND p.person_id = r.person_id
-    AND r.hdb_postal_code = h.postal_code
-    AND h.carpark_id = c.carpark_id
-    AND o.carpark_id <> h.carpark_id
-GROUP BY p.person_name, v.registration_number
-
-/* 
-5. When 90% of season parking passes for a particular month and carpark (all parking lots) are sold, 
-only the residents living in the HDB block that linked to the carpark who have not purchased any season parking pass can purchase the remaining pass. 
-Prepare your data and query to simulate the success and fail scenario for non-resident.
-*/
-
-SELECT 
-    sp.pass_id,
-    p.person_name,
-    sp.carpark_id,
-    sp.start_date,
-    sp.end_date
-FROM seasonal_pass sp, person p, residence r, hdb_block h
-WHERE sp.person_id = p.person_id
-    AND p.person_id = r.person_id
-    AND r.hdb_postal_code = h.postal_code
-    AND h.carpark_id = sp.carpark_id
-    AND (
-        (
-            (SELECT 
-                COUNT(*) 
-            FROM seasonal_pass sp2 
-            WHERE sp2.carpark_id = sp.carpark_id 
-                AND MONTH(sp2.start_date) = MONTH(sp.start_date)
-            ) 
-            < 
-            0.9 * (SELECT 
-                        season_total_quota 
-                   FROM carpark c 
-                   WHERE c.carpark_id = sp.carpark_id
-            )
-        )
-        OR
-        p.person_id IN (
-            SELECT 
-                r2.person_id
-            FROM residence r2, hdb_block h2
-            WHERE r2.hdb_postal_code = h2.postal_code
-              AND h2.carpark_id = sp.carpark_id
-              AND r2.person_id NOT IN (
-                  SELECT 
-                    sp3.person_id
-                  FROM seasonal_pass sp3
-                  WHERE MONTH(sp3.start_date) = MONTH(sp.start_date)
-              )
-        )
+    SUM(DATEDIFF(month, sp.start_date, sp.end_date)) AS TotalMonthsSubscribed
+FROM
+    SeasonalPass AS sp
+JOIN
+    Vehicle AS v ON sp.vrn = v.vrn
+JOIN
+    Person AS p ON v.nric = p.nric
+WHERE
+    -- Check if the person's postal code does not match any HDB block linked to the carpark
+    NOT EXISTS (
+        SELECT 1
+        FROM HdbBlock AS hb
+        WHERE hb.carpark_id = sp.carpark_id AND hb.postal_code = p.postal_code
     )
+GROUP BY
+    p.name,
+    v.vrn,
+    sp.carpark_id
+ORDER BY
+    sp.carpark_id,
+    p.name;
 
-/* 6. Identify the household (address) that purchases more than three season parking for the same month. 
-List down the name of vehicle owners and the vehicle registration number. */
 
-SELECT 
-    h.block_no,
-    h.street_name,
-    p.person_name,
-    v.registration_number
-FROM hdb_block h, residence r, person p, seasonal_pass sp, vehicle v
-WHERE h.postal_code = r.hdb_postal_code
-    AND r.person_id = p.person_id
-    AND p.person_id = sp.person_id
-    AND p.person_id = v.owner_id
-GROUP BY h.block_no, h.street_name, p.person_name, v.registration_number
-HAVING COUNT(sp.pass_id) > 3
+ -- Q4. Parking Offences by Non-Residents
+ SELECT
+    p.name AS OwnerName,
+    v.vrn AS VehicleRegistration,
+    COUNT(o.offense_id) AS NumberOfOffences,
+    SUM(rf.fine_amount) AS TotalFines
+FROM
+    Offence AS o
+JOIN
+    ParkingSession AS ps ON o.session_id = ps.session_id
+JOIN
+    Vehicle AS v ON ps.vrn = v.vrn
+JOIN
+    Person AS p ON v.nric = p.nric
+JOIN
+    VehicleModel AS vm ON v.model = vm.model
+JOIN
+    RuleFines AS rf ON o.rule_id = rf.rule_id AND vm.vehicle_type = rf.vehicle_type
+WHERE
+    -- Ensure the offence occurred in a carpark where the owner is not a resident
+    NOT EXISTS (
+        SELECT 1
+        FROM HdbBlock AS hb
+        WHERE hb.carpark_id = ps.carpark_id AND hb.postal_code = p.postal_code
+    )
+GROUP BY
+    p.name,
+    v.vrn
+ORDER BY
+    OwnerName,
+    VehicleRegistration;
+
+-- Q6. Households with More Than Three Season Passes
+WITH HouseholdPasses AS (
+    SELECT
+        p.postal_code,
+        p.unit_no,
+        FORMAT(sp.start_date, 'yyyy-MM') AS ParkingMonth,
+        p.name AS OwnerName,
+        v.vrn AS VehicleRegistration,
+        -- Count passes per household per month
+        COUNT(*) OVER (PARTITION BY p.postal_code, p.unit_no, FORMAT(sp.start_date, 'yyyy-MM')) AS PassesPerHousehold
+    FROM
+        SeasonalPass AS sp
+    JOIN
+        Vehicle AS v ON sp.vrn = v.vrn
+    JOIN
+        Person AS p ON v.nric = p.nric
+)
+SELECT
+    hp.postal_code,
+    hp.unit_no,
+    hp.ParkingMonth,
+    hp.OwnerName,
+    hp.VehicleRegistration
+FROM
+    HouseholdPasses hp
+WHERE
+    hp.PassesPerHousehold > 3
+ORDER BY
+    hp.postal_code,
+    hp.unit_no,
+    hp.ParkingMonth;
+
+-- Q5. Season Pass Purchase Simulation for Non-Residents
+-- Setup: Ensure carpark W44 is at 90% capacity
+UPDATE Carpark
+    SET season_current_count = 270
+    WHERE carpark_id = 'W44';
+
+-- FAILURE SCENARIO: A non-resident tries to buy a pass at a 90% full carpark.
+-- The person associated with vehicle 'SKE2214T' is assumed to be a non-resident for carpark W44.
+
+SELECT v.vrn, p.nric, hdb.postal_code, hdb.carpark_id, c.season_current_count, c.season_total_quota
+    FROM Vehicle v 
+    INNER JOIN Person p ON v.nric = p.nric 
+    INNER JOIN HdbBlock hdb ON hdb.postal_code = p.postal_code
+    INNER JOIN Carpark c ON c.carpark_id = hdb.carpark_id
+    WHERE v.vrn = 'SKE2214T';
+
+PRINT '--- Attempting to insert a pass for a non-resident (EXPECTED TO FAIL) ---';
+BEGIN TRY
+    INSERT INTO SeasonalPass (status, start_date, end_date, amount_paid, pass_type, purchase_datetime, season_rate_id, carpark_id, vrn)
+    VALUES ('active', '2025-12-01', '2025-12-31', 110.00, 'regular', GETDATE(), 5, 'W44', 'SKE2214T');
+END TRY
+BEGIN CATCH
+    PRINT 'Transaction failed as expected. Error message:';
+    PRINT ERROR_MESSAGE();
+END CATCH;
+GO
+
+-- Verify that the count did NOT increase.
+SELECT carpark_id, season_current_count, season_total_quota
+FROM Carpark
+WHERE carpark_id = 'W44'; -- The count should still be 270
+
+-- SUCCESS SCENARIO: A resident buys a pass at the same 90% full carpark.
+-- The person associated with vehicle 'SFS3378B' is a resident of a block linked to carpark W44.
+
+SELECT v.vrn, p.nric, hdb.postal_code, hdb.carpark_id, c.season_current_count, c.season_total_quota
+    FROM Vehicle v 
+    INNER JOIN Person p ON v.nric = p.nric 
+    INNER JOIN HdbBlock hdb ON hdb.postal_code = p.postal_code
+    INNER JOIN Carpark c ON c.carpark_id = hdb.carpark_id
+    WHERE v.vrn = 'SFS3378B';
+
+PRINT '--- Attempting to insert a pass for a resident (EXPECTED TO SUCCEED) ---';
+INSERT INTO SeasonalPass (status, start_date, end_date, amount_paid, pass_type, purchase_datetime, season_rate_id, carpark_id, vrn)
+VALUES ('active', '2025-12-01', '2025-12-31', 110.00, 'regular', GETDATE(), 5, 'W44', 'SFS3378B');
+GO
+
+-- Verify that the count DID increase.
+SELECT carpark_id, season_current_count, season_total_quota
+FROM Carpark
+WHERE carpark_id = 'W44'; -- The count should now be 271
+
