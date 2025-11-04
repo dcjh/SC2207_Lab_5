@@ -7,7 +7,6 @@ Breakdown the records by vehicle types (i.e. car, motorcycle, and commercial veh
 
 SELECT 
     m.mscp_id,
-    m.mscp_name,
     v.vehicle_type,
     COUNT(ps.session_id) AS vehicle_count
 FROM mscp m, parking_session ps, vehicle v
@@ -15,7 +14,7 @@ WHERE m.carpark_id = ps.carpark_id
     AND ps.vehicle_id = v.vehicle_id
     AND DATEDIFF(MINUTE, ps.start_time, ps.end_time) < 60
     AND DATENAME(WEEKDAY, ps.start_time) IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
-GROUP BY m.mscp_id, m.mscp_name, v.vehicle_type
+GROUP BY m.mscp_id, v.vehicle_type
 
 /* 
 2. For each carpark, list down the total revenue 
@@ -24,13 +23,12 @@ collected for both short term parking as season parking separately.
 
 SELECT 
     c.carpark_id,
-    c.carpark_name,
     SUM(CASE WHEN ps.parking_type = 'Short Term' THEN ps.amount_paid ELSE 0 END) AS short_term_revenue,
     SUM(CASE WHEN sp.pass_type = 'Season' THEN sp.total_amount ELSE 0 END) AS season_parking_revenue
 FROM carpark c, parking_session ps, seasonal_pass sp 
 WHERE c.carpark_id = ps.carpark_id
   AND c.carpark_id = sp.carpark_id
-GROUP BY c.carpark_id, c.carpark_name
+GROUP BY c.carpark_id
 
 /* 
 3. List down the season parking holder who are not resident at the HDB block that linked to the carpark. 

@@ -169,7 +169,7 @@ CREATE TABLE LotType(
 
 CREATE TABLE CarparkLot(
 	lot_id      INT NOT NULL,
-	carpark_id  INT NOT NULL,
+	carpark_id  VARCHAR(100) NOT NULL,
 
 	PRIMARY KEY(carpark_id, lot_id)
 );
