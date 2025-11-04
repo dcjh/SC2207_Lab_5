@@ -78,7 +78,7 @@ CREATE TABLE HdbBlock(
 );
 
 CREATE TABLE Residence(
-	unit_no         VARCHAR(10)     NOT NULL, -- e.g., '#03-215'
+	unit_no         VARCHAR(10)     	NOT NULL, -- e.g., '#03-215'
 	postal_code     CHAR(6)             NOT NULL,
 
 	PRIMARY KEY (unit_no, postal_code),

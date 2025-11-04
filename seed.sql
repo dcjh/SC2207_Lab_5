@@ -23,9 +23,15 @@ CREATE TABLE #vehicle_model (
 	brand           VARCHAR(255)        NOT NULL,
 	vehicle_type    VARCHAR(255)        NOT NULL
 );
+CREATE TABLE #hdb_block (
+	postal_code     CHAR(6)	        NOT NULL,
+	block_no        VARCHAR(10)     NOT NULL,
+	street_name     VARCHAR(255)    NOT NULL,
+	carpark_id      VARCHAR(100)	NOT NULL,
+);
 CREATE TABLE #residence (
 	unit_no         VARCHAR(10)     NOT NULL, -- e.g., '#03-215'
-	postal_code     INT             NOT NULL 
+	postal_code     CHAR(6)         NOT NULL 
     PRIMARY KEY(unit_no, postal_code)
 );
 
@@ -130,6 +136,40 @@ VALUES
     ('Lancer','Mitsubishi','car'),
     ('Golf','Volkswagen','car'),
     ('Impreza','Subaru','car');
+
+-- Insert hdb block details into temp table
+INSERT INTO #hdb_block(postal_code, block_no, street_name, carpark_id) 
+VALUES
+    (560422, '422', 'Ang Mo Kio Ave 3', 'A34'),
+    (560426, '426', 'Ang Mo Kio Ave 3', 'A35'),
+    (560440, '440', 'Ang Mo Kio Ave 10', 'A36'),
+    (550232, '232', 'Serangoon Ave 3', 'SE50'),
+    (120204, '204', 'Clementi Ave 6', 'C28'),
+    (120205, '205', 'Clementi Ave 6', 'C28'),
+    (542319, '319B', 'Anchorvale Dr', 'SK49'),
+    (542320, '320B', 'Anchorvale Dr', 'SK48'),
+    (543250, '250C', 'Compassvale St', 'SK15'),
+    (540252, '252', 'Compassvale St', 'SK15'),
+    (821445, '445A', 'New Punggol Rd', 'PL90'),
+    (822409, '409B', 'Northshore Dr', 'PL80'),
+    (640735, '735', 'Jurong West St 75', 'J80M'),
+    (641672, '672A', 'Jurong West St 65', 'JM25'),
+    (642654, '654B', 'Jurong West St 61', 'JM24'),
+    (642655, '655B', 'Jurong West St 61', 'JM24'),
+    (680344, '344', 'Choa Chu Kang Loop', 'CK22'),
+    (680354, '354', 'Choa Chu Kang Central', 'CK25'),
+    (680618, '618', 'Choa Chu Kang North 7', 'CK51'),
+    (730411, '411', 'Woodlands Street 41', 'W44'),
+    (730418, '418', 'Woodlands Street 41', 'W45'),
+    (730421, '421', 'Woodlands Street 41', 'W45'),
+    (735780, '780E', 'Woodlands Cres', 'W780'),
+    (735786, '786B', 'Woodlands Drive 60', 'W81'),
+    (754354, '354D', 'Admiralty Dr', 'SB23'),
+    (510560, '560', 'Pasir Ris Street 51', 'PM24'),
+    (510566, '556', 'Pasir Ris Street 51', 'PM23'),
+    (460425, '425', 'Bedok North Rd', 'B13'),
+    (460426, '426', 'Bedok North Rd', 'B13'),
+    (380103, '103', 'Aljunied Cres', 'GE1A');
 
 -- Insert residence details into temp table
 INSERT INTO #residence(unit_no, postal_code) 
@@ -527,7 +567,6 @@ VALUES
 (33, 'All', 24.00),
 (34, 'All', 400.00),
 (35, 'All', 100.00);
-
 
 --Carpark data insertion
 INSERT INTO Carpark (carpark_id, night_parking, grace_minutes, season_total_quota, season_current_count)
