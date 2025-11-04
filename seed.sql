@@ -505,68 +505,6 @@ VALUES
 	('White'),
 	('Yellow');
 
--- 1. Motor cars (Outside Central Area)
-INSERT INTO ShortTermRates 
-(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
-VALUES
-('Car - Outside Central', 0.60, '00:00', '23:59', 'All', 12.00, 'Per Day'); 
--- $0.60 per half-hour at all times, capped at $12 per day (non-Central Areas)
-
--- 2. Motor cars (Within Central Area)
-INSERT INTO ShortTermRates 
-(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
-VALUES
-('Car - Central (Day)', 1.20, '07:00', '17:00', 'Weekday', 20.00, 'Per Day'),
-('Car - Central (Night)', 0.60, '17:00', '07:00', 'Weekday', 20.00, 'Per Day');
--- $1.20 per half-hour (7am–5pm Mon–Sat), $0.60 per half-hour other hours, capped $20/day
-
--- 3. Motorcycles
-INSERT INTO ShortTermRates 
-(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
-VALUES
-('Motorcycle - Day', 0.65, '07:00', '22:30', 'All', 0.65, 'Per Lot'),
-('Motorcycle - Night', 0.65, '22:30', '07:00', 'All', 0.65, 'Per Lot');
--- $0.65 per lot per entry (day or night)
-
--- 4. Heavy vehicles
-INSERT INTO ShortTermRates 
-(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
-VALUES
-('Heavy Vehicle', 1.20, '00:00', '23:59', 'All', 40.00, 'Per Day');
--- $1.20 per half-hour at all times, capped at around $40/day
-
--- 5. Loading / Unloading (Special rule)
-INSERT INTO ShortTermRates 
-(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
-VALUES
-('Loading/Unloading', 0.00, '00:00', '00:15', 'All', 0.00, 'First 15 mins Free'),
-('Loading/Unloading', 2.00, '00:15', '00:45', 'All', 2.00, 'First Half Hour'),
-('Loading/Unloading', 4.00, '00:45', '23:59', 'All', 4.00, 'Subsequent Half Hour');
--- Free first 15 mins, then $2 for first half-hour, $4 for subsequent half-hours
-
--- 6. Night Parking at HDB Car Parks (with Night Parking Scheme)
-INSERT INTO ShortTermRates 
-(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
-VALUES
-('Car - HDB NPS Night', 5.00, '22:30', '07:00', 'All', 5.00, 'Per Night');
--- $5 cap per night for 10.30pm–7am at car parks with Night Parking Scheme
-
--- 7. Day parking at HDB (no Night Parking Scheme)
-INSERT INTO ShortTermRates 
-(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
-VALUES
-('Car - HDB Day (No NPS)', 0.60, '07:00', '22:30', 'All', 12.00, 'Per Day');
--- Day cap $12 non-Central, $20 Central (set as $12 here for non-Central by default)
-
--- 8. Peak hour surcharges
-INSERT INTO ShortTermRates 
-(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
-VALUES
-('Car - Central (Peak)', 1.40, '07:00', '09:30', 'Weekday', 20.00, 'Per Day'),
-('Car - Outside Central (Peak)', 0.80, '07:00', '09:30', 'Weekday', 12.00, 'Per Day');
--- Peak-hour rates: $1.40 per half-hour (Central), $0.80 (Outside Central)
-
-
 INSERT INTO ParkingRule (rule_desc)
 VALUES
 ('Parking in a place other than in a parking lot.'),
