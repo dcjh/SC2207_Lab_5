@@ -3,6 +3,7 @@ USE tddag1;
 IF OBJECT_ID('tempdb..#people') IS NOT NULL DROP TABLE #people;
 IF OBJECT_ID('tempdb..#vehicle_details') IS NOT NULL DROP TABLE #vehicle_details;
 IF OBJECT_ID('tempdb..#vehicle_model') IS NOT NULL DROP TABLE #vehicle_model;
+IF OBJECT_ID('tempdb..#residence') IS NOT NULL DROP TABLE #residence;
 
 -- temp tables allow for data manipulation before inserting into actual tables
 CREATE TABLE #people (
@@ -135,7 +136,19 @@ VALUES
     ('Sylphy','Nissan','car'),
     ('Lancer','Mitsubishi','car'),
     ('Golf','Volkswagen','car'),
-    ('Impreza','Subaru','car');
+    ('Impreza','Subaru','car'),
+    ('CB400','Honda','motorcycle'),
+    ('Wave 125','Honda','motorcycle'),
+    ('NMAX 155','Yamaha','motorcycle'),
+    ('MT-07','Yamaha','motorcycle'),
+    ('Versys 650','Kawasaki','motorcycle'),
+    ('Burgman 400','Suzuki','motorcycle'),
+    ('Hiace','Toyota','commercial'),
+    ('NV350','Nissan','commercial'),
+    ('K2500','Kia','commercial'),
+    ('H100','Hyundai','commercial'),
+    ('Canter','Mitsubishi','commercial'),
+    ('Sprinter','Mercedes-Benz','commercial');
 
 -- Insert hdb block details into temp table
 INSERT INTO #hdb_block(postal_code, block_no, street_name, carpark_id) 
@@ -403,7 +416,7 @@ INSERT INTO #veh_first_pass(vrn, obu_id_id, color, year_manufactured, sg_registe
     SELECT 
         v.vrn, 
         v.obu_id_id, 
-        v.color, 
+        v.color,
         v.year_manufactured, 
         v.sg_registered,
         mo.model,
@@ -484,6 +497,74 @@ VALUES
 	(17.00, 0, 'sheltered', 'motorcycle'),
 	(185.00, 0, 'sheltered', 'commercial');
 
+CREATE TABLE #season_pass_dates (
+	start_date DATE,
+	end_date DATE,
+	purchase_datetime DATETIME
+	);
+
+INSERT INTO #season_pass_dates (start_date, end_date, purchase_datetime)
+VALUES
+	('2025-11-01', '2025-11-30', '2025-10-27 09:00:00'),
+	('2025-11-01', '2025-11-30', '2025-10-27 13:00:00'),
+	('2025-11-01', '2025-11-30', '2025-10-28 10:10:00'),
+	('2025-11-01', '2025-11-30', '2025-10-28 15:00:00'),
+	('2025-11-01', '2025-11-30', '2025-10-29 14:05:00'),
+	('2025-11-01', '2025-11-30', '2025-10-29 14:10:00'),
+	('2025-11-01', '2025-11-30', '2025-10-30 14:05:00'),
+	('2025-11-01', '2025-11-30', '2025-10-30 11:40:00'),
+	('2025-11-01', '2025-11-30', '2025-10-30 12:15:00'),
+	('2025-11-01', '2025-11-30', '2025-10-30 16:15:00'),
+	('2025-12-01', '2025-12-31', '2025-11-28 10:00:00'),
+	('2025-12-01', '2025-12-31', '2025-11-28 12:00:00'),
+	('2025-12-01', '2025-12-31', '2025-11-29 11:20:00'),
+	('2025-12-01', '2025-12-31', '2025-11-30 15:05:00'),
+	('2025-12-01', '2025-12-31', '2025-11-30 10:20:00'),
+	('2025-01-01', '2026-01-31', '2025-12-28 16:00:00'),
+	('2025-01-01', '2026-01-31', '2025-12-29 11:10:00'),
+	('2025-01-01', '2026-01-31', '2025-12-30 13:00:00'),
+	('2025-01-01', '2026-01-31', '2025-12-30 14:05:00'),
+	('2025-01-01', '2026-01-31', '2025-12-31 15:35:00'),
+	('2025-02-01', '2026-02-28', '2026-01-28 16:30:00'),
+	('2025-02-01', '2026-02-28', '2026-01-29 12:30:00'),
+	('2025-02-01', '2026-02-28', '2026-01-29 11:00:00'),
+	('2025-02-01', '2026-02-28', '2026-01-30 10:15:00'),
+	('2025-02-01', '2026-02-28', '2026-01-31 13:35:00'),
+	('2025-03-01', '2026-03-31', '2026-02-27 13:30:00'),
+	('2025-03-01', '2026-03-31', '2026-02-27 11:05:00'),
+	('2025-03-01', '2026-03-31', '2026-02-28 14:45:00'),
+	('2025-03-01', '2026-03-31', '2026-02-28 10:25:00'),
+	('2025-03-01', '2026-03-31', '2026-02-28 13:05:00');
+
+INSERT INTO SeasonalPass (status, start_date, end_date, amount_paid, pass_type, purchase_datetime, season_rate_id, carpark_id, vrn)
+	SELECT TOP (30)
+		'Active' AS status,
+		s.start_date,
+		s.end_date,
+		sr.monthly_charges AS amount_paid,
+		CASE WHEN RAND(CHECKSUM(NEWID())) < 0.6 THEN 'Resident' ELSE 'Non-Resident' END AS pass_type,
+		s.purchase_datetime,
+		sr.season_rate_id,
+		c.carpark_id,
+		v.vrn
+	FROM #season_pass_dates
+	CROSS APPLY (
+		SELECT TOP 1 v.vrn, v.vehicle_type
+		FROM Vehicle v
+		ORDER BY NEWID()
+	) v
+	CROSS APPLY (
+		SELECT TOP 1 c.carpark_id, c.season_total_quota
+		FROM Carpark c
+		ORDER BY NEWID()
+	) c
+	JOIN SeasonRate sr
+		ON sr.vehicle_type = v.vehicle_type
+		AND sr.carpark_type = CASE WHEN c.carpark_id LIKE 'TWM%' THEN 'sheltered' ELSE 'surface' END
+	ORDER BY s.purchase_datetime;
+
+DROP TABLE #season_pass_dates
+
 -- Insert data into lot_type
 INSERT INTO LotType (color)
 VALUES 
@@ -491,6 +572,32 @@ VALUES
 	('Red_white'),
 	('White'),
 	('Yellow');
+
+-- Cars
+INSERT INTO ShortTermRates 
+(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
+VALUES
+('Car', 1.20, '07:00', '17:00', 'Weekday', 20.00, 'Per Day'),
+('Car', 0.60, '17:00', '22:30', 'Weekday', 10.00, 'Per Day'),
+('Car', 0.80, '07:00', '22:30', 'Weekend/Public Holiday', 12.00, 'Per Day'),
+('Car', 0.70, '22:30', '07:00', 'All', 5.00, 'Per Entry');
+
+-- Motorcycles
+INSERT INTO ShortTermRates 
+(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
+VALUES
+('Motorcycle', 0.65, '07:00', '22:30', 'All', 0.65, 'Per Lot'),
+('Motorcycle', 0.30, '22:30', '07:00', 'All', 0.65, 'Per Lot');
+
+-- Commercial Vehicles (Lorries, Vans, Trucks)
+INSERT INTO ShortTermRates 
+(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
+VALUES
+('Commercial', 1.20, '07:00', '22:30', 'Weekday', 40.00, 'Per Day'),
+('Commercial', 1.00, '07:00', '22:30', 'Weekend/Public Holiday', 30.00, 'Per Day'),
+('Commercial', 0.80, '22:30', '07:00', 'All', 25.00, 'Per Entry');
+
+
 
 INSERT INTO ParkingRule (rule_desc)
 VALUES
@@ -571,51 +678,67 @@ VALUES
 --Carpark data insertion
 INSERT INTO Carpark (carpark_id, night_parking, grace_minutes, season_total_quota, season_current_count)
 VALUES
-  ('A34',  1, 15,  50, 10),
-  ('A35',  1, 15,  50, 10),
-  ('A36',  1, 15,  50, 10),
-  ('SE50', 1, 15, 360, 72),
-  ('C28',  1, 15,  50, 10),
-  ('SK48', 1, 15, 360, 72),
-  ('SK49', 1, 15, 360, 72),
-  ('SK15', 1, 15, 390, 78),
-  ('PL80', 0,  0,  60, 12),
-  ('PL90', 0,  0,  50, 10),
-  ('J80M', 1, 15, 330, 66),
-  ('JM24', 1, 15, 360, 72),
-  ('JM25', 1, 15, 360, 72),
-  ('CK22', 0,  0, 330, 66),
-  ('CK25', 0,  0,  50, 10),
-  ('CK51', 0,  0, 300, 60),
-  ('W44',  1, 15, 300, 60),
-  ('W45',  1, 15, 300, 60),
-  ('W780', 1, 15, 390, 78),
-  ('W81',  1, 15, 300, 60),
-  ('SB23', 1, 15, 360, 72),
-  ('PM23', 1, 15, 330, 66),
-  ('PM24', 1, 15, 240, 48),
-  ('B13',  1, 15,  50, 10),
-  ('GE1A', 1, 15,  50, 10);
+    ('A34',  1, 15,  50, 10),
+    ('A35',  1, 15,  50, 10),
+    ('A36',  1, 15,  50, 10),
+    ('SE50', 1, 15, 360, 72),
+    ('C28',  1, 15,  50, 10),
+    ('SK48', 1, 15, 360, 72),
+    ('SK49', 1, 15, 360, 72),
+    ('SK15', 1, 15, 390, 78),
+    ('PL80', 0,  0,  60, 12),
+    ('PL90', 0,  0,  50, 10),
+    ('J80M', 1, 15, 330, 66),
+    ('JM24', 1, 15, 360, 72),
+    ('JM25', 1, 15, 360, 72),
+    ('CK22', 0,  0, 330, 66),
+    ('CK25', 0,  0,  50, 10),
+    ('CK51', 0,  0, 300, 60),
+    ('W44',  1, 15, 300, 60),
+    ('W45',  1, 15, 300, 60),
+    ('W780', 1, 15, 390, 78),
+    ('W81',  1, 15, 300, 60),
+    ('SB23', 1, 15, 360, 72),
+    ('PM23', 1, 15, 330, 66),
+    ('PM24', 1, 15, 240, 48),
+    ('B13',  1, 15,  50, 10),
+    ('GE1A', 1, 15,  50, 10);
 INSERT INTO MSCP (carpark_id, clearance_height, deck_count)
 VALUES
-  ('SE50', 2.15, 12),
-  ('SK48', 2.15, 12),
-  ('SK49', 2.15, 12),
-  ('SK15', 2.15, 13),
-  ('PL80', 2.15,  2),
-  ('J80M', 2.00, 11),
-  ('JM24', 2.15, 12),
-  ('JM25', 2.15, 12),
-  ('CK22', 1.90, 11),
-  ('CK51', 2.00, 10),
-  ('W44',  2.00, 10),
-  ('W45',  2.00, 10),
-  ('W780', 2.15, 13),
-  ('W81',  2.15, 10),
-  ('SB23', 2.15, 12),
-  ('PM23', 2.00, 11),
-  ('PM24', 2.00,  8);
+    ('SE50', 2.15, 12),
+    ('SK48', 2.15, 12),
+    ('SK49', 2.15, 12),
+    ('SK15', 2.15, 13),
+    ('PL80', 2.15,  2),
+    ('J80M', 2.00, 11),
+    ('JM24', 2.15, 12),
+    ('JM25', 2.15, 12),
+    ('CK22', 1.90, 11),
+    ('CK51', 2.00, 10),
+    ('W44',  2.00, 10),
+    ('W45',  2.00, 10),
+    ('W780', 2.15, 13),
+    ('W81',  2.15, 10),
+    ('SB23', 2.15, 12),
+    ('PM23', 2.00, 11),
+    ('PM24', 2.00,  8);
 
+INSERT INTO LotType(color)
+VALUES
+    ('Red'),
+    ('Red-With-White'),
+    ('White');
+INSERT INTO CarparkLot (lot_id, carpark_id)
+    SELECT lt.lot_id, c.carpark_id
+    FROM LotType AS lt
+    CROSS JOIN Carpark AS c
+    WHERE NOT EXISTS 
+    (
+        SELECT 1
+        FROM CarparkLot cl
+        WHERE cl.lot_id = lt.lot_id
+        AND cl.carpark_id = c.carpark_id
+    );
 
 -- Clean up temporary tables
 DROP TABLE #people;
