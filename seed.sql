@@ -3,6 +3,7 @@ USE tddag1;
 IF OBJECT_ID('tempdb..#people') IS NOT NULL DROP TABLE #people;
 IF OBJECT_ID('tempdb..#vehicle_details') IS NOT NULL DROP TABLE #vehicle_details;
 IF OBJECT_ID('tempdb..#vehicle_model') IS NOT NULL DROP TABLE #vehicle_model;
+IF OBJECT_ID('tempdb..#residence') IS NOT NULL DROP TABLE #residence;
 
 -- temp tables allow for data manipulation before inserting into actual tables
 CREATE TABLE #people (
@@ -135,7 +136,19 @@ VALUES
     ('Sylphy','Nissan','car'),
     ('Lancer','Mitsubishi','car'),
     ('Golf','Volkswagen','car'),
-    ('Impreza','Subaru','car');
+    ('Impreza','Subaru','car'),
+    ('CB400','Honda','motorcycle'),
+    ('Wave 125','Honda','motorcycle'),
+    ('NMAX 155','Yamaha','motorcycle'),
+    ('MT-07','Yamaha','motorcycle'),
+    ('Versys 650','Kawasaki','motorcycle'),
+    ('Burgman 400','Suzuki','motorcycle'),
+    ('Hiace','Toyota','commercial'),
+    ('NV350','Nissan','commercial'),
+    ('K2500','Kia','commercial'),
+    ('H100','Hyundai','commercial'),
+    ('Canter','Mitsubishi','commercial'),
+    ('Sprinter','Mercedes-Benz','commercial');
 
 -- Insert hdb block details into temp table
 INSERT INTO #hdb_block(postal_code, block_no, street_name, carpark_id) 
@@ -403,7 +416,7 @@ INSERT INTO #veh_first_pass(vrn, obu_id_id, color, year_manufactured, sg_registe
     SELECT 
         v.vrn, 
         v.obu_id_id, 
-        v.color, 
+        v.color,
         v.year_manufactured, 
         v.sg_registered,
         mo.model,
