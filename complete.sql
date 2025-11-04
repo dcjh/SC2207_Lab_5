@@ -164,7 +164,7 @@ CREATE TABLE EntryExitMode(
     PRIMARY KEY (vrn, carpark_id, entry_datetime),
     FOREIGN KEY (vrn) REFERENCES Vehicle(vrn),
     FOREIGN KEY (carpark_id) REFERENCES Carpark(carpark_id)
-)
+);
 
 CREATE TABLE Offence(
 	offense_id          INT IDENTITY(1, 1)  NOT NULL,
