@@ -505,6 +505,32 @@ VALUES
 	('White'),
 	('Yellow');
 
+-- Cars
+INSERT INTO ShortTermRates 
+(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
+VALUES
+('Car', 1.20, '07:00', '17:00', 'Weekday', 20.00, 'Per Day'),
+('Car', 0.60, '17:00', '22:30', 'Weekday', 10.00, 'Per Day'),
+('Car', 0.80, '07:00', '22:30', 'Weekend/Public Holiday', 12.00, 'Per Day'),
+('Car', 0.70, '22:30', '07:00', 'All', 5.00, 'Per Entry');
+
+-- Motorcycles
+INSERT INTO ShortTermRates 
+(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
+VALUES
+('Motorcycle', 0.65, '07:00', '22:30', 'All', 0.65, 'Per Lot'),
+('Motorcycle', 0.30, '22:30', '07:00', 'All', 0.65, 'Per Lot');
+
+-- Commercial Vehicles (Lorries, Vans, Trucks)
+INSERT INTO ShortTermRates 
+(vehicle_type, price, start_time, end_time, day_type, cap_amount, cap_scope)
+VALUES
+('Commercial', 1.20, '07:00', '22:30', 'Weekday', 40.00, 'Per Day'),
+('Commercial', 1.00, '07:00', '22:30', 'Weekend/Public Holiday', 30.00, 'Per Day'),
+('Commercial', 0.80, '22:30', '07:00', 'All', 25.00, 'Per Entry');
+
+
+
 INSERT INTO ParkingRule (rule_desc)
 VALUES
 ('Parking in a place other than in a parking lot.'),
