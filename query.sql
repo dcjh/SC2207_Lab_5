@@ -1,3 +1,5 @@
+USE tddag1;
+
 /*
  1. For each MSCP, count how many vehicles park for less than an hour during weekdays (Mon – Fri). 
 Breakdown the records by vehicle types (i.e. car, motorcycle, and commercial vehicle).
