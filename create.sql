@@ -126,6 +126,7 @@ CREATE TABLE ParkingSession(
 	rate_id         INT,
 	amount_paid     MONEY,
 
+
 	PRIMARY KEY (session_id),
 	FOREIGN KEY (rate_id)       REFERENCES ShortTermRates(rate_id) 
 		ON DELETE SET NULL,
@@ -141,8 +142,8 @@ CREATE TABLE EntryExitMode(
 	parking_mode    VARCHAR(255)  NOT NULL,
 
     PRIMARY KEY (vrn, carpark_id, entry_datetime),
-    FOREIGN KEY (vrn) REFERENCES vehicle(vrn),
-    FOREIGN KEY (carpark_no) REFERENCES carpark(carpark_no)
+    FOREIGN KEY (vrn) REFERENCES Vehicle(vrn),
+    FOREIGN KEY (carpark_id) REFERENCES Carpark(carpark_id)
 )
 
 CREATE TABLE Offence(
