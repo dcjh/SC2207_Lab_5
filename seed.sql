@@ -490,6 +490,44 @@ VALUES
 ('Failing to produce coupon on demand for inspection.'),
 ('Illegal parking in common property.');
 
+INSERT INTO RuleFines (rule_id, vehicle_type, fine_amount)
+VALUES
+(1, 'All', 70.00),
+(2, 'All', 80.00),
+(3, 'All', 70.00),
+(4, 'All', 70.00),
+(5, 'All', 70.00),
+(6, 'All', 70.00),
+(7, 'All', 70.00),
+(8, 'All', 70.00),
+(9, 'All', 70.00),
+(10, 'All', 70.00),
+(11, 'All', 70.00),
+(12, 'All', 80.00),
+(13, 'All', 80.00),
+(14, 'All', 80.00),
+(15, 'All', 70.00),
+(16, 'All', 70.00),
+(17, 'All', 70.00),
+(18, 'All', 300.00),
+(19, 'All', 300.00),
+(20, 'All', 40.00),
+(21, 'All', 40.00),
+(22, 'All', 40.00),
+(23, 'All', 8.00),
+(24, 'All', 12.00),
+(25, 'All', 24.00),
+(26, 'All', 40.00),
+(27, 'All', 40.00),
+(28, 'All', 40.00),
+(29, 'All', 40.00),
+(30, 'All', 80.00),
+(31, 'All', 8.00),
+(32, 'All', 12.00),
+(33, 'All', 24.00),
+(34, 'All', 400.00),
+(35, 'All', 100.00);
+
 -- Clean up temporary tables
 DROP TABLE #people;
 DROP TABLE #vehicle_details;
