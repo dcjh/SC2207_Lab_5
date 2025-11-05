@@ -136,10 +136,8 @@ CREATE TABLE ParkingSession(
 	PRIMARY KEY (session_id),
 	FOREIGN KEY (rate_id)       REFERENCES ShortTermRates(rate_id) 
 		ON DELETE SET NULL,
-    FOREIGN KEY (carpark_id)    REFERENCES Carpark(carpark_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (carpark_id)    REFERENCES Carpark(carpark_id),
 	FOREIGN KEY (vrn)           REFERENCES Vehicle(vrn)
-        ON DELETE CASCADE ON UPDATE CASCADE,
 );
 
 CREATE TABLE EntryExitMode(
@@ -151,10 +149,8 @@ CREATE TABLE EntryExitMode(
 
     PRIMARY KEY (vrn, carpark_id, entry_datetime),
     CONSTRAINT ck_entryexit_times CHECK (exit_datetime >= entry_datetime),
-    FOREIGN KEY (vrn) REFERENCES Vehicle(vrn)
-        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (vrn) REFERENCES Vehicle(vrn),
     FOREIGN KEY (carpark_id) REFERENCES Carpark(carpark_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
 )
 
 CREATE TABLE Offence(
@@ -184,12 +180,9 @@ CREATE TABLE SeasonalPass(
 
 	PRIMARY KEY (season_utr),
     CONSTRAINT ck_seasonalpass_dates CHECK (start_date <= end_date),
-    FOREIGN KEY (season_rate_id)    REFERENCES SeasonRate(season_rate_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (carpark_id)        REFERENCES Carpark(carpark_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (vrn)               REFERENCES Vehicle(vrn)
-        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (season_rate_id)    REFERENCES SeasonRate(season_rate_id),
+	FOREIGN KEY (carpark_id)        REFERENCES Carpark(carpark_id),
+	FOREIGN KEY (vrn)               REFERENCES Vehicle(vrn),
 );
 
 CREATE TABLE LotType(
