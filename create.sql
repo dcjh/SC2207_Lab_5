@@ -8,17 +8,18 @@ CREATE TABLE Carpark(
 	season_current_count  INT DEFAULT 0     NOT NULL,
 
 	PRIMARY KEY (carpark_id),
-	CHECK (season_current_count <= season_total_quota)
+	CONSTRAINT ck_carpark_season_count CHECK (season_current_count >= 0 
+        AND season_current_count <= season_total_quota)
 ); 
 
 CREATE TABLE MSCP (
-    carpark_id        VARCHAR(100)   NOT NULL,
-    clearance_height  DECIMAL(3,2) NOT NULL,
-    deck_count        INT   NOT NULL,
+    carpark_id        VARCHAR(100)      NOT NULL,
+    clearance_height  DECIMAL(3,2)      NOT NULL,
+    deck_count        INT               NOT NULL,
 
 	PRIMARY KEY (carpark_id),
     FOREIGN KEY (carpark_id) REFERENCES Carpark(carpark_id)
-		ON DELETE CASCADE,
+		ON DELETE CASCADE ON UPDATE CASCADE,
 );
 
 CREATE TABLE SeasonRate(
@@ -29,24 +30,25 @@ CREATE TABLE SeasonRate(
 	vehicle_type     VARCHAR(255)                   NOT NULL,
 
 	PRIMARY KEY (season_rate_id),
+    CONSTRAINT ck_seasonrate_carpark_type CHECK (carpark_type IN ('Normal','MSCP'))
 );
 
 CREATE TABLE ParkingRule (
-    rule_id INT IDENTITY(1, 1) NOT NULL,
-    rule_desc VARCHAR(255) NOT NULL UNIQUE,
+    rule_id INT IDENTITY(1, 1)  NOT NULL,
+    rule_desc VARCHAR(255)      NOT NULL UNIQUE,
+
     PRIMARY KEY (rule_id)
 );
 
 CREATE TABLE RuleFines (
-    rule_id INT NOT NULL,
-    vehicle_type VARCHAR(255) NOT NULL,
-    fine_amount MONEY NOT NULL,
+    rule_id INT                 NOT NULL,
+    vehicle_type VARCHAR(255)   NOT NULL,
+    fine_amount MONEY           NOT NULL,
+
     PRIMARY KEY (rule_id, vehicle_type),
     FOREIGN KEY (rule_id) REFERENCES ParkingRule(rule_id)
-		ON DELETE CASCADE
+		ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-
 
 CREATE TABLE ShortTermRates(
 	rate_id         INT IDENTITY(1, 1)  NOT NULL,
@@ -78,6 +80,7 @@ CREATE TABLE HdbBlock(
 	PRIMARY KEY (postal_code),
     CHECK (postal_code LIKE '[0-9][0-9][0-9][0-9][0-9][0-9]'), 
 	FOREIGN KEY (carpark_id) REFERENCES Carpark(carpark_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE Residence(
@@ -86,6 +89,7 @@ CREATE TABLE Residence(
 
 	PRIMARY KEY (unit_no, postal_code),
 	FOREIGN KEY (postal_code) REFERENCES HdbBlock(postal_code)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE Person(
@@ -97,7 +101,8 @@ CREATE TABLE Person(
 	postal_code     CHAR(6)         NOT NULL,
 
 	PRIMARY KEY (nric),
-	FOREIGN KEY (unit_no, postal_code) REFERENCES residence(unit_no, postal_code),
+	FOREIGN KEY (unit_no, postal_code) REFERENCES residence(unit_no, postal_code)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     CHECK (nric LIKE '[STFG][0-9][0-9][0-9][0-9][0-9][0-9][0-9][A-Z]'),
     CHECK (contact LIKE '[89]_______' OR contact LIKE '+65[89]_______'),
     CHECK (postal_code LIKE '[0-9][0-9][0-9][0-9][0-9][0-9]')
@@ -114,7 +119,8 @@ CREATE TABLE Vehicle(
 
 	PRIMARY KEY (vrn),
 	FOREIGN KEY (model)  REFERENCES VehicleModel(model),
-	FOREIGN KEY (nric)      REFERENCES Person(nric),
+	FOREIGN KEY (nric)   REFERENCES Person(nric)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     CHECK (LEN(obu_id_id) BETWEEN 10 AND 32 AND obu_id_id NOT LIKE '%[^0-9A-Za-z]%')
 );
 
@@ -130,8 +136,10 @@ CREATE TABLE ParkingSession(
 	PRIMARY KEY (session_id),
 	FOREIGN KEY (rate_id)       REFERENCES ShortTermRates(rate_id) 
 		ON DELETE SET NULL,
-    FOREIGN KEY (carpark_id)    REFERENCES Carpark(carpark_id),
-	FOREIGN KEY (vrn)           REFERENCES Vehicle(vrn),
+    FOREIGN KEY (carpark_id)    REFERENCES Carpark(carpark_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (vrn)           REFERENCES Vehicle(vrn)
+        ON DELETE CASCADE ON UPDATE CASCADE,
 );
 
 CREATE TABLE EntryExitMode(
@@ -142,8 +150,11 @@ CREATE TABLE EntryExitMode(
 	parking_mode    VARCHAR(255)  NOT NULL,
 
     PRIMARY KEY (vrn, carpark_id, entry_datetime),
-    FOREIGN KEY (vrn) REFERENCES Vehicle(vrn),
+    CONSTRAINT ck_entryexit_times CHECK (exit_datetime >= entry_datetime),
+    FOREIGN KEY (vrn) REFERENCES Vehicle(vrn)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (carpark_id) REFERENCES Carpark(carpark_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 )
 
 CREATE TABLE Offence(
@@ -153,9 +164,10 @@ CREATE TABLE Offence(
 	session_id          INT                 NOT NULL,
 
 	PRIMARY KEY (offense_id),
-	FOREIGN KEY (rule_id)       REFERENCES ParkingRule(rule_id),
+	FOREIGN KEY (rule_id)       REFERENCES ParkingRule(rule_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (session_id)    REFERENCES ParkingSession(session_id)
-		ON DELETE CASCADE
+		ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE SeasonalPass(
@@ -171,9 +183,13 @@ CREATE TABLE SeasonalPass(
 	vrn                 VARCHAR(10)			NOT NULL,
 
 	PRIMARY KEY (season_utr),
-    FOREIGN KEY (season_rate_id)    REFERENCES SeasonRate(season_rate_id),
-	FOREIGN KEY (carpark_id)        REFERENCES Carpark(carpark_id),
-	FOREIGN KEY (vrn)               REFERENCES Vehicle(vrn),
+    CONSTRAINT ck_seasonalpass_dates CHECK (start_date <= end_date),
+    FOREIGN KEY (season_rate_id)    REFERENCES SeasonRate(season_rate_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (carpark_id)        REFERENCES Carpark(carpark_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (vrn)               REFERENCES Vehicle(vrn)
+        ON DELETE CASCADE ON UPDATE CASCADE,
 );
 
 CREATE TABLE LotType(
@@ -189,5 +205,7 @@ CREATE TABLE CarparkLot(
 
 	PRIMARY KEY(carpark_id, lot_id),
 	FOREIGN KEY (carpark_id)		REFERENCES Carpark(carpark_id)
-		ON DELETE CASCADE
+	    ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (lot_id) REFERENCES LotType(lot_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
